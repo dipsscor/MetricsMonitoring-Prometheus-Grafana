@@ -1,0 +1,40 @@
+version: '3.3'
+
+
+services:
+  web:
+    build: .
+    ports:
+      - 8080:8080
+    networks:
+      - metrics-monitor 
+
+
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    volumes:
+      - ./env/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - 9090:9090
+    networks:
+      - metrics-monitor  
+      
+      
+      
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - 3000:3000
+    networks:
+      - metrics-monitor  
+    env_file:
+      - ./env/grafana.env
+    
+networks:
+  metrics-monitor:
+    driver: bridge   
+
+

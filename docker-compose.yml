@@ -15,7 +15,7 @@ services:
     image: prom/prometheus
     container_name: prometheus
     volumes:
-      - ./env/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./env/prometheus_conf/prometheus.yml:/etc/prometheus/prometheus.yml:ro
     ports:
       - 9090:9090
     restart: unless-stopped    
@@ -48,7 +48,7 @@ services:
     networks:
       - metrics-monitor  
     env_file:
-      - ./env/grafana.env
+      - ./env/grafana_conf/grafana.env
       
       
   cadvisor:

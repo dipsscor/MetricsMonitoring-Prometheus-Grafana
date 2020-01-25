@@ -63,33 +63,161 @@ Application is accessible at:
 Prometheus is being provisned with Docker-Compose using the latest Prometheus image.
 
 
-	  prometheus:
-	    image: prom/prometheus
-	    container_name: prometheus
-	    volumes:
-	      - ./env/prometheus.yml:/etc/prometheus/prometheus.yml
-	    ports:
-	      - 9090:9090
-	    networks:
-	      - metrics-monitor 
+      prometheus:
+        image: prom/prometheus
+        container_name: prometheus
+        volumes:
+          - ./env/prometheus_conf/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+          - ./env/prometheus_conf/alert.rules:/etc/prometheus/alert.rules
+        ports:
+          - 9090:9090
+        restart: unless-stopped    
+        networks:
+          - metrics-monitor
+        depends_on:
+          - cadvisor
+          - node-exporter
 	      
-Prometheus confugurations are overwritten with prometheus.yml file located at : ./env/prometheus.yml. This goes into the docker container location : /etc/prometheus/prometheus.yml
+Prometheus confugurations are overwritten with prometheus.yml file located at : ./env/prometheus_conf/prometheus.yml. This goes into the docker container location - /etc/prometheus/prometheus.yml
 
 
-In "prometheus.yml" file the :
+In "prometheus.yml" file:
 	
-	metrics_path is set to receive from : /actuator/prometheus from the spring boot applications.
-	metrics_path: '/actuator/prometheus'
+    -global scrape settings - consists of global scrapes
+    
+    - scrape configs conists of:
+        - Prometheus config
+        - node-exporter config
+        - cadvisor config
+        - alerts configs
 	
-	Targets point to the springboot application named in "Docker compose" file.
-	    static_configs:
-	      - targets: ['web:8080']
-	
- Prometheus will be running at following location on web:
+ Prometheus will be running at following location on browser:
  
  	http://localhost:9090 
-	
+    
+    
+## Node exporter config
+The Node Exporter exposes the prometheus metrics of the host machine in which it is running and shows the machine’s file system, networking devices, processor, memory usages and others features as well. Node exporter can be run as a docker container while reporting stats for the host system. We will append configuration setting to the existing docker-compose.yml and prometheus.yml to bring up life to node-exporter.
 
+In docker-compose.yml:
+
+
+    prometheus:
+            ...............
+            ...............
+        depends_on:
+          - ..........
+          - node-exporter
+          
+     node-exporter:
+        image: prom/node-exporter
+        container_name: node-exporter
+        ports:
+        - '9100:9100'
+        restart: unless-stopped  
+        networks:
+          - metrics-monitor  
+
+ In prometheus.yml :
+
+       - job_name: 'node-exporter'
+         static_configs:
+          - targets: ['node-exporter:9100']
+          
+          
+## cadvisor config
+cAdvisor (short for container Advisor) analyzes and exposes resource usage and performance data from running containers. cAdvisor exposes Prometheus metrics out of the box. 
+
+
+In docker-compose.yml:
+
+
+    prometheus:
+            ...............
+            ...............
+        depends_on:
+          - cadvisor
+          - node-exporter
+          
+      cadvisor:
+        image: google/cadvisor:latest
+        container_name: cadvisor
+        ports:
+          - 8080:8080
+        restart: unless-stopped  
+        networks:
+          - metrics-monitor
+        volumes:
+          - /:/rootfs:ro
+          - /var/run:/var/run:rw
+          - /sys:/sys:ro
+          - /var/lib/docker/:/var/lib/docker:ro
+        depends_on:
+          - app
+
+
+In prometheus.yml:
+
+    ..............
+    ..............
+      - job_name: cadvisor
+        scrape_interval: 5s
+        static_configs:
+          - targets:
+            - cadvisor:8080
+            
+            
+  cadvisor is available on :
+  
+        http://localhost:8080/
+        
+        
+        
+        
+            
+## Alert configuration
+To setup notification, we need to configure three files-
+-    Alert.rules to define rules on which alert will be fired
+-    Map this file with the container in docker-compose.yml
+-    Edit Prometheus.yml to add alertmanager as a service.
+
+In ./env/prometheus_conf/alert.rules
+
+    groups:
+    - name: custom-alerts
+      rules:
+
+      # Alert for any instance that is unreachable for >2 minutes.
+      - alert: service_down
+        expr: up == 0
+        for: 2m
+        labels:
+          severity: page
+        annotations:
+          summary: "Instance {{ $labels.instance }} down"
+          description: "{{ $labels.instance }} of job {{ $labels.job }} has been down for more than 2 minutes."
+
+      - alert: high_load
+        expr: node_load1 > 0.5
+        for: 2m
+        labels:
+          severity: page
+        annotations:
+          summary: "Instance {{ $labels.instance }} under high load"
+          description: "{{ $labels.instance }} of job {{ $labels.job }} is under high load."
+          
+          
+In prometheus.yml:          
+          
+    rule_files:
+      - 'alert.rules'
+  
+  
+  
+  ![alt text](https://github.com/dipsscor/CustomerPortalSampleApplication/blob/master/Architecture.png)
+  
+  
+  
 ## Grafana Configuration
 Grafana is being provisned with Docker-Compose using the latest Grafana image.
 
@@ -104,8 +232,10 @@ Grafana is being provisned with Docker-Compose using the latest Grafana image.
 	    networks:
 	      - metrics-monitor  
 	    env_file:
-	      - ./env/grafana.env
- Grafana configurations are overwritten through grafana.env file located at local in ./env/grafana.env
+	      - ./env/grafana_conf/grafana.env
+          
+          
+ Grafana configurations are overwritten through grafana.env file located at local in ./env/grafana_conf/grafana.env
  
  In Grafana dashbaords and Datasources are pre-provisned through custom datasources and dashboards kept in env folder. These get copied to the appropriate location in Grafana's default location in Docker container.
  
@@ -125,3 +255,14 @@ Grafana is being provisned with Docker-Compose using the latest Grafana image.
  #### Options/Folder : holds the location where custom dashboards are injected.
  
  A custom dashboard is being used and modified from grafana market place for Springboot apps.
+ 
+ 
+ 
+ 
+ 
+ # References
+ 
+    https://linoxide.com/containers/setup-monitoring-docker-containers-prometheus/
+    https://github.com/vegasbrianc/prometheus/blob/master/prometheus/prometheus.yml
+    https://prometheus.io/docs/guides/cadvisor/
+    

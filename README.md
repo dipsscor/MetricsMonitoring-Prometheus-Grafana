@@ -37,7 +37,7 @@ Micrometer provides a vendor-neutral metrics collection API (rooted in io.microm
 	Wavefront
 
 ### Micrometer and Prometheus dependencies
-The metrics are exposed to http://localhost:8080/actuator/prometheus 
+The metrics are exposed to http://localhost:8088/actuator/prometheus 
 
   		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -56,7 +56,7 @@ The metrics are exposed to http://localhost:8080/actuator/prometheus
 
 Application is accessible at:
 	
-	http://localhost:8080/hello
+	http://localhost:8088/hello
 
 
 ## Prometheus Configuration

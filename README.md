@@ -96,6 +96,9 @@ In "prometheus.yml" file:
  	http://localhost:9090 
     
     
+   ![alt text](https://github.com/dipsscor/MetricsMonitoring-Prometheus-Grafana/blob/master/screenshots/prom_targets.png) 
+    
+    
 ## Node exporter config
 The Node Exporter exposes the prometheus metrics of the host machine in which it is running and shows the machine’s file system, networking devices, processor, memory usages and others features as well. Node exporter can be run as a docker container while reporting stats for the host system. We will append configuration setting to the existing docker-compose.yml and prometheus.yml to bring up life to node-exporter.
 
@@ -123,6 +126,9 @@ In docker-compose.yml:
        - job_name: 'node-exporter'
          static_configs:
           - targets: ['node-exporter:9100']
+          
+          
+
           
           
 ## cadvisor config
@@ -172,7 +178,7 @@ In prometheus.yml:
         http://localhost:8080/
         
         
-        
+   ![alt text](https://github.com/dipsscor/MetricsMonitoring-Prometheus-Grafana/blob/master/screenshots/cadvisor.png)      
         
             
 ## Alert configuration
@@ -214,7 +220,7 @@ In prometheus.yml:
   
   
   
-  ![alt text](https://github.com/dipsscor/CustomerPortalSampleApplication/blob/master/Architecture.png)
+  ![alt text](https://github.com/dipsscor/MetricsMonitoring-Prometheus-Grafana/blob/master/screenshots/prom_alerts.png)
   
   
   
@@ -257,7 +263,9 @@ Grafana is being provisned with Docker-Compose using the latest Grafana image.
  A custom dashboard is being used and modified from grafana market place for Springboot apps.
  
  
- 
+   ![alt text](https://github.com/dipsscor/MetricsMonitoring-Prometheus-Grafana/blob/master/screenshots/grafana1.png)
+   
+   ![alt text](https://github.com/dipsscor/MetricsMonitoring-Prometheus-Grafana/blob/master/screenshots/grafana2.png)
  
  
  # References
